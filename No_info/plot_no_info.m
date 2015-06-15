@@ -12,7 +12,6 @@ function plot_no_info
 
 %% get data 
 
-cd('~/TRENTOOL_exampledata/No_info/');
 files = dir('no_info*');
 
 %% plot

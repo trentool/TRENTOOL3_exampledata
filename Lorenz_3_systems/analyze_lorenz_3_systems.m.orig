@@ -63,7 +63,7 @@ cfgTEP.flagNei = 'Mass' ;           % type of neigbour search (knn)
 cfgTEP.sizeNei = 4;                 % number of neighbours in the mass/knn search
 
 
-%% define cfg for TEsurrogatestats.m
+%% define cfg for TEsurrogatestats_ensemble.m
 
 cfgTESS = [];
 
