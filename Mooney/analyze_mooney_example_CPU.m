@@ -31,8 +31,12 @@ if ~isdir(outputpath)
   error([outputpath ' is not a path. Please check!'])
 end
 load('mooney_channel_labels.mat');
-files = dir('*Up_VirCh_RawData_10to140Hz.mat');
-load([files(1).name]);
+files = {
+    'Mooney_ex_1_Up_VirCh_RawData_10to140Hz'
+    'Mooney_ex_2_Up_VirCh_RawData_10to140Hz'
+    'Mooney_ex_3_Up_VirCh_RawData_10to140Hz'
+    };
+load(files{1});
 
 %% define cfg for TEprepare.m
 
@@ -80,6 +84,9 @@ cfgTEP.sizeNei        = 4;         % number of neighbours used
 % extra conditioning to handle instantaneous mixing
 cfgTEP.extracond = 'Faes_Method';
 
+% set the level of verbosity of console outputs
+cfgTEP.verbosity = 'info_minor';
+
 %% define cfg for TEsurrogatestats_ensemble.m
 
 cfgTESS = [];
@@ -98,10 +105,10 @@ cfgTESS.shifttest      = 'no';      % we don't need this bc of the extra conditi
 for subj = 1:length(files)
     
     % load data
-    load(files(subj).name);
+    load(files{subj});
 
     % results file name
-    cfgTESS.fileidout  = fullfile(outputpath, files(subj).name(1:11));
+    cfgTESS.fileidout  = fullfile(outputpath, files{subj}(1:11));
     
     % call TE estimation
     tic;
