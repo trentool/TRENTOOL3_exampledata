@@ -51,6 +51,9 @@ cfgTEP.repPred        = 100;      % size(data.trial{1,1},2)*(3/4);
 cfgTEP.flagNei = 'Mass' ;           % neigbour analyse type
 cfgTEP.sizeNei = 4;                 % neigbours to analyse
 
+% set the level of verbosity of console outputs
+cfgTEP.verbosity = 'info_minor';
+
 
 %% define cfg for TEsurrogatestats_ensemble.m
 

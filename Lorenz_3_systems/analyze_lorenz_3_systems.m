@@ -62,6 +62,9 @@ cfgTEP.repPred        = 100;       % no. local prediction/points used for the Ra
 cfgTEP.flagNei = 'Mass' ;           % type of neigbour search (knn)
 cfgTEP.sizeNei = 4;                 % number of neighbours in the mass/knn search
 
+% set the level of verbosity of console outputs
+cfgTEP.verbosity = 'info_minor';
+
 
 %% define cfg for TEsurrogatestats.m
 
