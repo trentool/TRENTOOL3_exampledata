@@ -12,11 +12,20 @@ function analyze_groupdata_CPU(outputpath)
 % reconstruction and are analyzed using the CPU work flow for TE estimation 
 % in TRENTOOL. The time of interest 0ms 1200ms starts with stimulus 
 % presentation and includes the whole task interval. Transfer entropy is 
-% estimated from V1 to all other reconstructed sources.
+% estimated between three sources, SPL, cITG, and STG.
+%
+% The script performs a group analysis on TE and MI estimates demonstrating
+% two possible analysis settings (see step 3, below):
+%    (a) comparison of two groups of data sets, e.g., recordings from 
+%	 various subjects randomly assigned to one of two experimental
+%	 conditions (unit of observation: subject);
+%    (b) comparison of two data sets obtained from the same subject under
+%	 two different experimental conditionsi (unit of observation: 
+%	 trial).
 %
 % Results may be plotted using the function 'plot_group_example.m' in this
-% folder. Note that you may need to adjust the file paths in this example
-% script to run it on your computer.
+% folder. Note that this script is intended to be run from the example
+% scripts folder 'Groupanalysis'.
 %
 % OUTPUTPATH is a string that contains the path to a folder, where 
 %	     TRENTOOL will save analysis results
@@ -31,6 +40,7 @@ if ~isdir(outputpath)
 end
 
 %% get data
+
 cd data/
 files = dir('*.mat');
 
@@ -50,41 +60,46 @@ cfgTEP.predicttimemin_u    = 3;
 cfgTEP.predicttimemax_u    = 7;
 cfgTEP.predicttimestepsize = 2;
 cfgTEP.toi = [0 0.7];
-cfgTEP.maxlag      = 1000;    % orig: 1000/90
-cfgTEP.actthrvalue = 40;                           % treshold for ACT (orig: 150/100), kann auf 40/45/50 gesetzt werden
-cfgTEP.optimizemethod ='ragwitz';   % criterion used
+cfgTEP.maxlag      = 1000;          % max. lag for ACT calculation
+cfgTEP.actthrvalue = 40;            % treshold for ACT
+cfgTEP.optimizemethod ='ragwitz';   % criterion used for embedding optimization
 cfgTEP.ragdim         = 5:11;       % criterion dimension
-cfgTEP.ragtaurange    = [0.2 0.4];  % range for tau [0.5 1]
+cfgTEP.ragtaurange    = [0.2 0.4];  % range for tau [0.5 1], fraction of ACT
 cfgTEP.ragtausteps    = 5;          % steps for ragwitz tau steps
-cfgTEP.repPred        = 100;         % original: 100, kann auf 25-50 gesetzt werden
+cfgTEP.repPred        = 100;        % no. points per trial for embedding optimization
 cfgTEP.flagNei = 'Mass' ;           % neigbour analyse type
 cfgTEP.sizeNei = 4;                 % neigbours to analyse
 cfgTEP.extracond = 'Faes_Method';
 cfgTEP.ensemblemethod  = 'no';
 
 cfgTESS               = [];
-cfgTESS.shifttest     = 'no';
-cfgTESS.surrogatetype = 'trialshuffling';
-cfgTESS.MIcalc        = 1;
+cfgTESS.shifttest     = 'no';	% don't use a shift test, the Faes method takes care of volume conduction
+cfgTESS.surrogatetype = 'trialshuffling';  % option for surrogate creation
+cfgTESS.MIcalc        = 1;	% calculate the MI between source and target past states
 cfgTESS.optdimusage   = 'indivdim';   % dimension to use
 
-%% group prepare
+%% (1) group prepare
+% prepare individual files for group analysis by finding a common,
+% maximum embedding dimension.
 
 fileCell = {files(:).name};
 
 cfgTEP.outputpath = outputpath;
-TEgroup_prepare(cfgTEP, fileCell)
+TEgroup_prepare(cfgTEP, fileCell);   % adds a field 'groupprepared' to the data
 
-%% estimate TE
+%% (2) estimate TE using a common embedding dimension
+% use the files prepared for group analysis
 
 for i=1:length(files)
-    load([outputpath files(i).name])
+    load([outputpath files(i).name])  % use data prepared for group analysis in step (1)
     cfgTESS.fileidout = strcat(outputpath, files(i).name(1:5));
     TEpermtest = InteractionDelayReconstruction_calculate(cfgTEP, cfgTESS, data);
 end
 
-
-%% group statistics
+%% (3a) group statistics
+% Assume the first two files represent recordings from two subjects under  
+% experimental condition 1, and the other two files represent recordings 
+% from two subjects under experimental condition 2.
 
 cd(outputpath)
 files = dir([outputpath '*TEpermtest_output.mat']);
@@ -110,14 +125,20 @@ cfgGSTAT.datatype = 'MI';
 cfgGSTAT.fileidout   = [outputpath 'groupstatsMI'];
 TEgroup_stats(cfgGSTAT, fileCell);
 
-%% single subject statistics
+%% (3b) single subject statistics
+% Assume two files represent recordings from the same subject under two
+% experimental conditions.
 
-file1 = load(files(1).name);
-file2 = load(files(2).name);
-cfgGSTAT.fileidout   = [outputpath 'condstatssingle'];
-TEgroup_conditionstatssingle(cfgGSTAT, file1.TEpermtest, file2.TEpermtest);
+load(files(1).name);
+res_1 = TEpermtest; clear TEpermtest
+load(files(2).name);
+res_2 = TEpermtest;
+cfgGSTAT.datatype = 'TE';
+cfgGSTAT.fileidout   = [outputpath 'condstatssingleTE'];
+TEgroup_conditionstatssingle(cfgGSTAT, res_1, res_2);
+cfgGSTAT.datatype = 'MI';
+cfgGSTAT.fileidout   = [outputpath 'condstatssingleMI'];
+TEgroup_conditionstatssingle(cfgGSTAT, res_1, res_2);
 
 %%
-close all
-fclose(fid);
 exit
